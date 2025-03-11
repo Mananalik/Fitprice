@@ -3,8 +3,18 @@ import React, { useState } from "react";
 import { Accordion, AccordionItem } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 
+interface Product {
+  name: string;
+  price: string;
+  image: string;
+  url: string;
+}
+
 function MultiStepAccordion() {
   const [steps, setSteps] = useState([{ id: 1, selected: "" }]);
+  const [isLoading, setIsLoading] = useState(false); // Loading state
+  const [error, setError] = useState<string | null>(null); // Error state
+  const [results, setResults] = useState<Product[]>([]);
 
   // Define product options with weights and flavors
   const optionsMap: Record<string, { weights: string[]; flavors: string[] }> = {
@@ -64,6 +74,39 @@ function MultiStepAccordion() {
   const isSelectionComplete =
     steps.length === 3 && steps.every((step) => step.selected !== "");
 
+  const handleSearch = async () => {
+    const selectedProduct = steps.find((step) => step.id === 1)?.selected;
+    const selectedWeight = steps.find((step) => step.id === 2)?.selected;
+    const selectedFlavor = steps.find((step) => step.id === 3)?.selected;
+
+    if (!selectedProduct || !selectedWeight || !selectedFlavor) {
+      alert("Please select all options");
+      return;
+    }
+
+    setIsLoading(true); // Start loading
+    setError(null); // Clear previous errors
+    setResults([]); // Clear previous results
+
+    try {
+      const response = await fetch(
+        `/api/search?product=${selectedProduct}&weight=${selectedWeight}&flavor=${selectedFlavor}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch search results");
+      }
+
+      const data: Product[] = await response.json();
+      setResults(data);
+    } catch (error) {
+      console.error("Error fetching search results", error);
+      setError("Failed to fetch search results. Please try again.");
+    } finally {
+      setIsLoading(false); // Stop loading
+    }
+  };
+
   return (
     <div className="w-full max-w-xl mx-auto mt-12 space-y-4 flex flex-col items-center">
       {steps.map((step) => (
@@ -76,7 +119,8 @@ function MultiStepAccordion() {
                   onClick={() => handleSelection(step.id, option)}
                   variant={step.selected === option ? "default" : "outline"}
                   value={option}
-                  title={option}>
+                  title={option}
+                >
                   {option}
                 </Button>
               ))}
@@ -84,11 +128,47 @@ function MultiStepAccordion() {
           </AccordionItem>
         </Accordion>
       ))}
+
       {isSelectionComplete && (
-        <button className="bg-black text-white px-3 py-2 rounded-lg w-[25%] hover:bg-white hover:text-black hover:border-2 hover:border-black transition-all duration-200">
-          Search
+        <button
+          onClick={handleSearch}
+          disabled={isLoading} // Disable button while loading
+          className="bg-black text-white px-3 py-2 rounded-lg w-[25%] hover:bg-white hover:text-black hover:border-2 hover:border-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? "Searching..." : "Search"}
         </button>
       )}
+
+      {/* Display error message */}
+      {error && <p className="text-red-500">{error}</p>}
+
+      {/* Display results */}
+      <div className="mt-8 w-full">
+        {results.length > 0 ? (
+          results.map((item, index) => (
+            <div key={index} className="border p-4 mb-4 rounded-lg shadow-sm">
+              <h3 className="text-xl font-bold">{item.name}</h3>
+              <p className="text-gray-600">Price: {item.price}</p>
+              <img
+                src={item.image}
+                alt={item.name}
+                className="w-32 h-32 object-cover mt-2"
+              />
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:underline mt-2 block"
+              >
+                Buy Now
+              </a>
+            </div>
+          ))
+        ) : (
+          isSelectionComplete &&
+          !isLoading && <p className="text-gray-500">No results found.</p>
+        )}
+      </div>
     </div>
   );
 }

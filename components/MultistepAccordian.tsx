@@ -38,6 +38,10 @@ function MultiStepAccordion() {
         "Natural/Unsweetened",
       ],
     },
+    "Mass Gainer": {
+      weights: ["1kg", "2kg", "3kg", "5kg"],
+      flavors: ["Chocolate", "Vanilla", "Mango Burst", "Kesar Kaju Pista"],
+    },
   };
 
   const handleSelection = (id: number, value: string) => {

@@ -7,8 +7,9 @@ interface Product {
   price: string;
   image: string;
   url: string;
+  brand?: string; // Optional field for brand
+  rating?: number; // Optional field for rating
 }
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const product = searchParams.get('product');
@@ -55,13 +56,24 @@ async function scrapeAmazon(query: string): Promise<Product[]> {
       const price = element.querySelector('.a-price-whole')?.textContent?.trim() || '';
       const image = element.querySelector('img')?.getAttribute('src') || '';
       const url = element.querySelector('a')?.getAttribute('href') || '';
+      const brand = element.querySelector('.a-size-base-plus')?.textContent?.trim() || ''; // Extract brand
+      const ratingText = element.querySelector('.a-icon-alt')?.textContent?.trim() || ''; // Extract rating text (e.g., "4.2 out of 5 stars")
+      const rating = parseFloat(ratingText); // Convert rating text to a number
 
       if (name && price && image && url) {
-        products.push({ name, price, image, url: `https://www.amazon.in${url}` });
+        products.push({
+          name,
+          price,
+          image,
+          url: `https://www.amazon.in${url}`,
+          brand,
+          rating,
+        });
       }
     });
     return products;
   });
+
 
   await browser.close();
   return results;

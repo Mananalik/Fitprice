@@ -20,7 +20,7 @@ function Page() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<Product[]>([]);
-
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   useEffect(() => {
     if (!product || !weight || !flavor) {
       setError("Invalid Search Parameters");
@@ -51,6 +51,16 @@ function Page() {
     fetchResults();
   }, [product, weight, flavor]);
 
+  const sortedResults = results.slice().sort((a, b) => {
+    const priceA = parseFloat(a.price.replace(/[^0-9.]/g, "")); // Remove non-numeric characters
+    const priceB = parseFloat(b.price.replace(/[^0-9.]/g, ""));
+
+    if (sortOrder === "asc") {
+      return priceA - priceB; // Ascending order
+    } else {
+      return priceB - priceA; // Descending order
+    }
+  });
   return (
     <div className="w-full max-w-[90%] mx-auto mt-12 text-center p-6">
       <h1 className="text-4xl font-extrabold text-gray-800 mb-6">
@@ -73,10 +83,31 @@ function Page() {
           </button>
         </div>
       )}
-
+         {!isLoading && !error && results.length > 0 && (
+        <div className="flex justify-center space-x-4 mb-6">
+          <button
+            onClick={() => setSortOrder("asc")}
+            className={`px-4 py-2 rounded-lg transition-all duration-200 ${
+              sortOrder === "asc"
+                ? "bg-black text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}>
+            Sort by Price (Low to High)
+          </button>
+          <button
+            onClick={() => setSortOrder("desc")}
+            className={`px-4 py-2 rounded-lg transition-all duration-200 ${
+              sortOrder === "desc"
+                ? "bg-black text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}>
+            Sort by Price (High to Low)
+          </button>
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mt-8">
-        {!isLoading && !error && results.length > 0
-          ? results.map((item, index) => (
+        {!isLoading && !error && sortedResults.length > 0
+          ? sortedResults.map((item, index) => (
               <div
                 key={index}
                 className="relative bg-white bg-opacity-70 backdrop-blur-md border border-gray-300 rounded-2xl shadow-lg p-6 transition-all hover:scale-105 hover:shadow-xl">
@@ -95,7 +126,7 @@ function Page() {
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-4 inline-block bg-black text-white px-4 py-2 rounded-lg hover:bg-white hover:text-black hover:border-2 hover:border-black  transition-all">
+                  className="mt-4 inline-block bg-black text-white px-4 py-2 rounded-lg hover:bg-white hover:text-black hover:border-2 hover:border-black transition-all">
                   Buy Now
                 </a>
               </div>

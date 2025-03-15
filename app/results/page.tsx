@@ -1,6 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Slider from "rc-slider";
+import "rc-slider/assets/index.css";
 
 interface Product {
   name: string;
@@ -9,6 +11,7 @@ interface Product {
   url: string;
   brand?: string;
   rating?: number;
+  site: string;
 }
 
 function Page() {
@@ -22,9 +25,11 @@ function Page() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<Product[]>([]);
-  const [sortOrder, setSortOrder] = useState<"price-asc" | "price-desc" | "rating" | "brand">("price-asc");
+  const [sortOrder, setSortOrder] = useState<
+    "relevance" | "price-asc" | "price-desc" | "rating" | "brand"
+  >("relevance"); // Default to "relevance"
   const [minPrice, setMinPrice] = useState<number>(0);
-  const [maxPrice, setMaxPrice] = useState<number>(1000); // Adjust max price as needed
+  const [maxPrice, setMaxPrice] = useState<number>(10000); // Adjust max price as needed
   const [minRating, setMinRating] = useState<number>(0);
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
 
@@ -65,28 +70,54 @@ function Page() {
       return (
         price >= minPrice &&
         price <= maxPrice &&
-        (selectedBrand === "all" || item.brand === selectedBrand) &&
+        (selectedBrand === "all" || item.site === selectedBrand) && // Filter by site
         (item.rating ?? 0) >= minRating
       );
     })
     .sort((a, b) => {
+      if (sortOrder === "relevance") {
+        // Provide default values if product, weight, or flavor is null
+        const productName = product || "";
+        const productWeight = weight || "";
+        const productFlavor = flavor || "";
+
+        // Calculate relevance score for product A
+        const aName = a.name.toLowerCase();
+        const aScore =
+          (aName.includes(productName.toLowerCase()) ? 1 : 0) +
+          (aName.includes(productWeight.toLowerCase()) ? 1 : 0) +
+          (aName.includes(productFlavor.toLowerCase()) ? 1 : 0);
+
+        // Calculate relevance score for product B
+        const bName = b.name.toLowerCase();
+        const bScore =
+          (bName.includes(productName.toLowerCase()) ? 1 : 0) +
+          (bName.includes(productWeight.toLowerCase()) ? 1 : 0) +
+          (bName.includes(productFlavor.toLowerCase()) ? 1 : 0);
+
+        console.log("Product A:", a.name, "Score:", aScore); // Debugging
+        console.log("Product B:", b.name, "Score:", bScore); // Debugging
+
+        // Sort by relevance score in descending order
+        return bScore - aScore;
+      }
+
       const priceA = parseFloat(a.price.replace(/[^0-9.]/g, ""));
       const priceB = parseFloat(b.price.replace(/[^0-9.]/g, ""));
 
       switch (sortOrder) {
         case "price-asc":
-          return priceA - priceB; // Sort by price (low to high)
+          return priceA - priceB;
         case "price-desc":
-          return priceB - priceA; // Sort by price (high to low)
+          return priceB - priceA;
         case "rating":
-          return (b.rating ?? 0) - (a.rating ?? 0); // Sort by rating (high to low)
+          return (b.rating ?? 0) - (a.rating ?? 0);
         case "brand":
-          return (a.brand ?? "").localeCompare(b.brand ?? ""); // Sort by brand (alphabetical order)
+          return (a.site ?? "").localeCompare(b.site ?? ""); // Sort by site
         default:
-          return 0; // Default: no sorting
+          return 0;
       }
     });
-
   return (
     <div className="w-full max-w-[90%] mx-auto mt-12 text-center p-6">
       <h1 className="text-4xl font-extrabold text-gray-800 mb-6">
@@ -112,43 +143,54 @@ function Page() {
 
       {!isLoading && !error && results.length > 0 && (
         <>
-          {/* Price Range Filter */}
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
+            <div className="w-full sm:w-64">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Price Range
               </label>
-              <div className="flex space-x-2">
-                <input
-                  type="number"
-                  value={minPrice}
-                  onChange={(e) => setMinPrice(parseFloat(e.target.value))}
-                  className="w-24 px-2 py-1 border border-gray-300 rounded-lg"
-                  placeholder="Min"
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-600">${minPrice}</span>
+                <Slider
+                  range
+                  min={0}
+                  max={10000} // Adjust max price as needed
+                  value={[minPrice, maxPrice]}
+                  onChange={(value: number | number[]) => {
+                    if (Array.isArray(value)) {
+                      setMinPrice(value[0]);
+                      setMaxPrice(value[1]);
+                    }
+                  }}
+                  trackStyle={[{ backgroundColor: "#000" }]}
+                  handleStyle={[
+                    { backgroundColor: "#000", borderColor: "#000" },
+                    { backgroundColor: "#000", borderColor: "#000" },
+                  ]}
+                  railStyle={{ backgroundColor: "#ddd" }}
                 />
-                <input
-                  type="number"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(parseFloat(e.target.value))}
-                  className="w-24 px-2 py-1 border border-gray-300 rounded-lg"
-                  placeholder="Max"
-                />
+                <span className="text-sm text-gray-600">${maxPrice}</span>
+              </div>
+              <div className="flex items-center space-x-4 mt-2">
+                <span className="text-sm text-gray-600">Min: ${minPrice}</span>
+                <span className="text-sm text-gray-600">Max: ${maxPrice}</span>
               </div>
             </div>
 
             {/* Brand Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Brand
+                Site
               </label>
               <select
                 value={selectedBrand}
-                onChange={(e) => setSelectedBrand(e.target.value)}
+                onChange={(e) => {
+                  console.log("Selected Brand:", e.target.value); // Debugging
+                  setSelectedBrand(e.target.value);
+                }}
                 className="px-2 py-1 border border-gray-300 rounded-lg">
                 <option value="all">All</option>
-                <option value="Brand A">Brand A</option>
-                <option value="Brand B">Brand B</option>
-                {/* Add more brands dynamically if available */}
+                <option value="Amazon">Amazon</option>
+                <option value="MuscleBlaze">MuscleBlaze</option>
               </select>
             </div>
 
@@ -170,6 +212,15 @@ function Page() {
 
           {/* Sorting Options */}
           <div className="flex justify-center space-x-4 mb-6">
+            <button
+              onClick={() => setSortOrder("relevance")}
+              className={`px-4 py-2 rounded-lg transition-all duration-200 ${
+                sortOrder === "relevance"
+                  ? "bg-black text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}>
+              Sort by Relevance
+            </button>
             <button
               onClick={() => setSortOrder("price-asc")}
               className={`px-4 py-2 rounded-lg transition-all duration-200 ${

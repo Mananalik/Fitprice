@@ -7,11 +7,15 @@
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
+    "target": "ES2022",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "forceConsistentCasingInFileNames": true,
+    "typeRoots": ["./node_modules/@types"],
+    "types": ["node", "puppeteer"],
     "plugins": [
       {
         "name": "next"

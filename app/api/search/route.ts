@@ -66,9 +66,10 @@ async function scrapeProducts(query: string): Promise<Product[]> {
 
   const amazonResults = await scrapeAmazon(page, query);
   const muscleBlazeResults = await scrapeMuscleBlaze(page, query);
+  const optimumnutritionResults = await scrapeOptimum(page, query);
 
   await browser.close();
-  return [...amazonResults, ...muscleBlazeResults];
+  return [...amazonResults, ...muscleBlazeResults, ...optimumnutritionResults];
 }
 
 async function scrapeAmazon(page: Page, query: string): Promise<Product[]> {
@@ -147,7 +148,7 @@ async function scrapeMuscleBlaze(
               .querySelector(".starting-price-from")
               ?.textContent?.trim()
               .replace("₹", "") || ""; // Remove currency symbol
-          const image =
+          let image =
             element.querySelector(".variant-img img")?.getAttribute("src") ||
             "";
           const url = element.querySelector("a")?.getAttribute("href") || "";
@@ -157,8 +158,6 @@ async function scrapeMuscleBlaze(
               .querySelector(".variant-rating-section p")
               ?.textContent?.trim() || "";
           const rating = parseFloat(ratingText);
-
-          console.log({ fullName, price, image, url, brand, rating }); // Log each product
 
           if (fullName && price && image && url) {
             products.push({
@@ -179,6 +178,75 @@ async function scrapeMuscleBlaze(
     return [];
   }
 }
+
+async function scrapeOptimum(page: Page, query: string): Promise<Product[]> {
+  try {
+    await page.goto(
+      `https://www.optimumnutrition.co.in/splug?search=${encodeURIComponent(
+        query
+      )}`,
+      {
+        waitUntil: "networkidle2",
+        timeout: 60000,
+      }
+    );
+
+    // Wait for product items to load
+    await page.waitForSelector(".product-item", {
+      timeout: 60000,
+    });
+
+    return await page.evaluate(() => {
+      const products: Product[] = [];
+      document.querySelectorAll(".product-item").forEach((element) => {
+        const name =
+          element.querySelector(".product-name a")?.textContent?.trim() || "";
+        const price =
+          element
+            .querySelector(".price-new")
+            ?.textContent?.trim()
+            .replace("₹", "")
+            .trim() || "";
+
+        // Get the image container
+        const imageContainer = element.querySelector(
+          ".image-swap-effect, .image-swap-effect"
+        );
+
+        const mainImage =
+          imageContainer
+            ?.querySelector("img:not(.swap-image)")
+            ?.getAttribute("src") || "";
+
+        const url =
+          element.querySelector(".product-name a")?.getAttribute("href") || "";
+        const brand = "Optimum Nutrition";
+
+        // Count the number of filled stars for rating
+        const ratingStars = element.querySelectorAll(
+          ".rating .fa-stack .fa-star"
+        ).length;
+
+        if (name && price && url) {
+          products.push({
+            name,
+            price,
+            image: mainImage,
+            url: `https://www.optimumnutrition.co.in/${url}`,
+            brand,
+            rating: ratingStars,
+            site: "Optimum Nutrition",
+          });
+        }
+      });
+      return products;
+    });
+  } catch (error) {
+    console.error("Error scraping Optimum Nutrition:", error);
+    return [];
+  }
+}
+
 // Utility function to add random delays
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));

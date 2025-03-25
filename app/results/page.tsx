@@ -29,7 +29,7 @@ function Page() {
     "relevance" | "price-asc" | "price-desc" | "rating" | "brand"
   >("relevance"); // Default to "relevance"
   const [minPrice, setMinPrice] = useState<number>(0);
-  const [maxPrice, setMaxPrice] = useState<number>(10000); // Adjust max price as needed
+  const [maxPrice, setMaxPrice] = useState<number>(5000); // Adjust max price as needed
   const [minRating, setMinRating] = useState<number>(0);
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
 
@@ -83,20 +83,20 @@ function Page() {
 
         // Calculate relevance score for product A
         const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        const containsButter = productName.toLowerCase().includes("butter");
+
         const aScore =
           (aName.includes(productName.toLowerCase()) ? 1 : 0) +
           (aName.includes(productWeight.toLowerCase()) ? 1 : 0) +
-          (aName.includes(productFlavor.toLowerCase()) ? 1 : 0);
+          (aName.includes(productFlavor.toLowerCase()) ? 1 : 0) -
+          (!containsButter && aName.includes("butter") ? 10 : 0); // Reduce score if butter appears but was not searched
 
-        // Calculate relevance score for product B
-        const bName = b.name.toLowerCase();
         const bScore =
           (bName.includes(productName.toLowerCase()) ? 1 : 0) +
           (bName.includes(productWeight.toLowerCase()) ? 1 : 0) +
-          (bName.includes(productFlavor.toLowerCase()) ? 1 : 0);
-
-        console.log("Product A:", a.name, "Score:", aScore); // Debugging
-        console.log("Product B:", b.name, "Score:", bScore); // Debugging
+          (bName.includes(productFlavor.toLowerCase()) ? 1 : 0) -
+          (!containsButter && bName.includes("butter") ? 10 : 0); // Reduce score if butter appears but was not searched
 
         // Sort by relevance score in descending order
         return bScore - aScore;
@@ -153,7 +153,7 @@ function Page() {
                 <Slider
                   range
                   min={0}
-                  max={10000} // Adjust max price as needed
+                  max={5000} // Adjust max price as needed
                   value={[minPrice, maxPrice]}
                   onChange={(value: number | number[]) => {
                     if (Array.isArray(value)) {
@@ -191,6 +191,7 @@ function Page() {
                 <option value="all">All</option>
                 <option value="Amazon">Amazon</option>
                 <option value="MuscleBlaze">MuscleBlaze</option>
+                <option value="Optimum Nutrition">Optimum Nutrition</option>
               </select>
             </div>
 
@@ -275,7 +276,11 @@ function Page() {
                   Price: {item.price}
                 </p>
                 <img
-                  src={item.image}
+                  src={
+                    item.name.includes("Butter") && item.site === "MuscleBlaze"
+                      ? "/assets/images/peanut-butter.png"
+                      : item.image
+                  }
                   alt={item.name}
                   className="w-32 h-32 object-cover mt-4 mx-auto rounded-lg shadow-md"
                 />

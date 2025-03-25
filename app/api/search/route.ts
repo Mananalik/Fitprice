@@ -67,9 +67,15 @@ async function scrapeProducts(query: string): Promise<Product[]> {
   const amazonResults = await scrapeAmazon(page, query);
   const muscleBlazeResults = await scrapeMuscleBlaze(page, query);
   const optimumnutritionResults = await scrapeOptimum(page, query);
+  const nutrabayResults = await scrapeNutrabay(page, query);
 
   await browser.close();
-  return [...amazonResults, ...muscleBlazeResults, ...optimumnutritionResults];
+  return [
+    ...amazonResults,
+    ...muscleBlazeResults,
+    ...optimumnutritionResults,
+    ...nutrabayResults,
+  ];
 }
 
 async function scrapeAmazon(page: Page, query: string): Promise<Product[]> {
@@ -247,6 +253,73 @@ async function scrapeOptimum(page: Page, query: string): Promise<Product[]> {
   }
 }
 
+async function scrapeNutrabay(page: Page, query: string): Promise<Product[]> {
+  try {
+    await page.goto(
+      `https://nutrabay.com/search?q=${encodeURIComponent(query)}`,
+      {
+        waitUntil: "networkidle2",
+        timeout: 60000,
+      }
+    );
+
+    await page.waitForSelector(".productListing_productCrad__I_iVP", {
+      timeout: 60000,
+    });
+
+    return await page.evaluate(() => {
+      const products: Product[] = [];
+      document
+        .querySelectorAll(".productListing_productCrad__I_iVP")
+        .forEach((element) => {
+          const nameElement = element.querySelector(
+            ".twoLineTruncate.plpProduct_product_card__FfvkU"
+          );
+          const infoElement = element.querySelector(
+            ".product_productInfo__GE_f7"
+          );
+          const name = `${nameElement?.textContent?.trim() || ""} ${
+            infoElement?.textContent?.trim() || ""
+          }`.trim();
+
+          const priceElement = element.querySelector(
+            ".plpProduct_ourPrice___6VZr"
+          );
+          const price =
+            priceElement?.textContent?.trim().replace("₹", "").trim() || "";
+
+          const image = element.querySelector("img")?.getAttribute("src") || "";
+
+          const urlElement = element.querySelector(
+            ".plpProduct_productcard__YsXnl"
+          );
+          const url = urlElement?.getAttribute("href") || "";
+
+          const brand = "Nutrabay";
+
+          const ratingElement = element.querySelector(".Rating_rating__g3c_g");
+          const rating =
+            Number(ratingElement?.getAttribute("data-rating")) || 0;
+
+          if (name && price && url) {
+            products.push({
+              name,
+              price,
+              image,
+              url: `https://nutrabay.com${url}`,
+              brand,
+              rating,
+              site: "Nutrabay", // Changed from "Optimum Nutrition"
+            });
+          }
+        });
+      return products;
+    });
+  } catch (error) {
+    console.error("Error scraping Nutrabay:", error);
+    return [];
+  }
+}
 // Utility function to add random delays
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));

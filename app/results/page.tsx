@@ -193,6 +193,7 @@ function Page() {
                 <option value="MuscleBlaze">MuscleBlaze</option>
                 <option value="Optimum Nutrition">Optimum Nutrition</option>
                 <option value="Nutrabay">Nutrabay</option>
+                <option value = "MyProtein">MyProtein</option>
               </select>
             </div>
 

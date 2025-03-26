@@ -9,6 +9,9 @@ interface Product {
   brand?: string;
   rating?: number;
   site: string;
+  originalPrice?: string;    // Optional field
+  reviewCount?: number;      // Optional field
+  promotion?: string;        // Optional field
 }
 
 export async function GET(request: Request) {
@@ -68,13 +71,14 @@ async function scrapeProducts(query: string): Promise<Product[]> {
   const muscleBlazeResults = await scrapeMuscleBlaze(page, query);
   const optimumnutritionResults = await scrapeOptimum(page, query);
   const nutrabayResults = await scrapeNutrabay(page, query);
-
+  const myProteinResults = await scrapeMyProtein(page, query);
   await browser.close();
   return [
     ...amazonResults,
     ...muscleBlazeResults,
     ...optimumnutritionResults,
     ...nutrabayResults,
+    ...myProteinResults,
   ];
 }
 
@@ -317,6 +321,78 @@ async function scrapeNutrabay(page: Page, query: string): Promise<Product[]> {
     });
   } catch (error) {
     console.error("Error scraping Nutrabay:", error);
+    return [];
+  }
+}
+
+
+async function scrapeMyProtein(page: Page, query: string): Promise<Product[]> {
+  try {
+    await page.goto(
+      `https://www.myprotein.co.in/search/?q=${encodeURIComponent(query)}`,
+      {
+        waitUntil: "domcontentloaded",
+        timeout: 30000,
+      }
+    );
+
+    await page.waitForSelector("product-card-wrapper", {
+      timeout: 30000,
+    });
+
+    return await page.evaluate(() => {
+      const products: Product[] = [];
+      
+      document.querySelectorAll("product-card-wrapper").forEach((element) => {
+        try {
+          // Name - from title element
+          const name = element.querySelector(".product-item-title")?.textContent?.trim() || "";
+          
+          // Price - clean and extract current price
+          const priceText = element.querySelector(".price")?.textContent?.trim() || "";
+          const price = priceText.replace(/[^\d.]/g, '');
+          
+          // Image - prefer src, fallback to srcset
+          const imgElement = element.querySelector(".first-image");
+          const image = imgElement?.getAttribute("src") || 
+                       imgElement?.getAttribute("srcset")?.split(' ')[0] || "";
+          
+          // URL - from title link
+          const url = element.querySelector(".product-item-title")?.getAttribute("href") || "";
+          
+          // Rating - approximate calculation from stars
+          const ratingStars = element.querySelectorAll('svg[height="20"][width="20"]');
+          let rating = 0;
+          ratingStars.forEach(star => {
+            const gradientId = star.querySelector('linearGradient')?.id;
+            if (gradientId && gradientId.includes('list-product')) {
+              const stop = star.querySelector('stop[offset="100%"]');
+              if (stop) rating += 1;
+              else if (star.querySelector('stop[offset="45%"]')) rating += 0.45;
+            }
+          });
+
+          if (name && price && url) {
+            products.push({
+              name,
+              price,
+              image,
+              url: url.startsWith('http') ? url : `https://www.myprotein.co.in${url}`,
+              brand: "MyProtein",
+              rating: Math.round(rating * 10) / 10, // Round to 1 decimal place
+              site: "MyProtein"
+            });
+          }
+        } catch (e) {
+          console.error('Error processing product:', e);
+        }
+      });
+      
+      return products;
+    });
+  } catch (error) {
+    console.error("Error scraping MyProtein:", error);
+    await page.screenshot({ path: 'myprotein-error.png' });
     return [];
   }
 }

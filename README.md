@@ -1,5 +1,3 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
 ## Getting Started
 
 First, run the development server:
@@ -20,14 +18,72 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
+# FitPrice
 
-To learn more about Next.js, take a look at the following resources:
+## 📌 Project Overview
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This project is a *web scraper* built using *Puppeteer* that helps users find the best deals on supplements and related products. Users input their desired product name and budget range, and the scraper fetches matching product listings from multiple e-commerce websites, providing a side-by-side comparison of prices.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+##  Features
+
+-  *Search Functionality*: Users input product name.
+-  *Multi-Website Scraping*: Fetches results from multiple e-commerce platforms.
+-  *Price-Based Filtering*: Only shows products within the user-defined input.
+-  *Product Details Extraction*: Scrapes product name, price, link, and image.
+-  *Headless Automation*: Uses Puppeteer for seamless browser automation.
+-  *Retry Mechanism*: Handles failures with auto-retries to ensure robustness.
+
+##  Technologies Used
+
+- *Next.js*  (Frontend Framework)
+- *Node.js*  (Backend Runtime)
+- *Puppeteer* (Web Scraping & Automation)
+- *JavaScript/TypeScript*  (Programming Language)
+
+##  How It Works
+
+1. *User Input*: Choose from the given options.
+2. *Web Scraping*: Puppeteer visits e-commerce websites and extracts relevant product details.
+3. *Data Filtering*: Only products that are selected are displayed.
+4. *Output*: Displays the results in a structured format (console, JSON file, or web interface).
+
+##  Installation & Setup
+
+### Prerequisites
+
+- Install *Google Chrome* (optional, if not using Puppeteer bundled Chromium)
+
+### Steps to Run
+
+1. Clone this repository:
+   bash
+   git clone https://github.com/Mananalik/Fitprice.git
+   
+2. Install dependencies:
+   bash
+   npm install
+   
+3. Run the scraper:
+   bash
+   npm run dev
+   
+4. Enter the product details when prompted.
+
+
+
+##  Notes
+
+- *Amazon & Flipkart Blocking: These sites have strict bot detection; using a **proxy rotation service* is recommended.
+- *Legal Compliance: Ensure scraping complies with **website terms of service*.
+- *Performance Optimization*: Reduce scraping frequency to avoid IP bans.
+
+## Contributions
+
+We welcome contributions! Feel free to fork this repository and submit *pull requests*.
+
+##  Credits
+
+Developed by *Saumil Singh Rana* and *Manan Malik*
 
 ## Deploy on Vercel
 

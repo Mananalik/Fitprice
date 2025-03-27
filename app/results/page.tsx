@@ -120,13 +120,15 @@ function Page() {
     });
   return (
     <div className="w-full max-w-[90%] mx-auto mt-12 text-center p-6">
-      <h1 className="text-4xl font-extrabold text-gray-800 mb-6">
-        Search Results
-      </h1>
-
       {isLoading && (
-        <div className="flex justify-center items-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-blue-500"></div>
+        <div className="flex flex-col justify-center items-center">
+          <div className="mt-5">
+            <span className="text-2xl font-semibold">
+              Please be patient with us as it may take some time to get the
+              results
+            </span>
+          </div>
+          <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-black m-10"></div>
         </div>
       )}
 
@@ -143,13 +145,16 @@ function Page() {
 
       {!isLoading && !error && results.length > 0 && (
         <>
+          <h1 className="text-4xl font-extrabold text-gray-800 mb-6">
+            Search Results
+          </h1>
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6 mb-6">
             <div className="w-full sm:w-64">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Price Range
               </label>
               <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600">${minPrice}</span>
+                <span className="text-sm text-gray-600">₹{minPrice}</span>
                 <Slider
                   range
                   min={0}
@@ -168,11 +173,11 @@ function Page() {
                   ]}
                   railStyle={{ backgroundColor: "#ddd" }}
                 />
-                <span className="text-sm text-gray-600">${maxPrice}</span>
+                <span className="text-sm text-gray-600">₹{maxPrice}</span>
               </div>
               <div className="flex items-center space-x-4 mt-2">
-                <span className="text-sm text-gray-600">Min: ${minPrice}</span>
-                <span className="text-sm text-gray-600">Max: ${maxPrice}</span>
+                <span className="text-sm text-gray-600">Min: ₹{minPrice}</span>
+                <span className="text-sm text-gray-600">Max: ₹{maxPrice}</span>
               </div>
             </div>
 
@@ -193,7 +198,7 @@ function Page() {
                 <option value="MuscleBlaze">MuscleBlaze</option>
                 <option value="Optimum Nutrition">Optimum Nutrition</option>
                 <option value="Nutrabay">Nutrabay</option>
-                <option value = "MyProtein">MyProtein</option>
+                <option value="MyProtein">MyProtein</option>
                 <option value="Nakpro">Nakpro</option>
               </select>
             </div>
@@ -276,7 +281,7 @@ function Page() {
                   {item.name}
                 </h3>
                 <p className="text-lg text-gray-700 mt-2">
-                  Price: {item.price}
+                  Price: ₹{item.price}
                 </p>
                 <img
                   src={

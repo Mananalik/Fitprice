@@ -91,17 +91,42 @@ input[type="range"]::-webkit-slider-thumb {
   margin-top: -6px;
 }
 
+.icon {
+  font-weight: bold;
+  font-family: "Poppins", sans-serif; /* Choose a modern font */
+  background: linear-gradient(45deg, #ff416c, #ff4b2b); /* Stylish gradient */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; /* Gradient text effect */
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  display: inline-block;
+}
+
 @layer utilities {
   .btn {
     @apply py-4 px-4 bg-secondary hover:bg-opacity-70 rounded-[30px] text-white text-lg font-semibold;
   }
 
   .head-text {
-    @apply mt-4 text-6xl leading-[72px] font-bold tracking-[-1.2px] text-gray-900;
+    @apply mt-4 text-5xl sm:text-6xl lg:text-7xl leading-[1.1] font-bold tracking-tight text-gray-900;
   }
 
   .section-text {
     @apply text-secondary text-[32px] font-semibold;
+  }
+
+  @keyframes bounce-right {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(4px);
+    }
+  }
+
+  .animate-pulse {
+    animation: bounce-right 1.5s infinite;
   }
 
   .small-text {
@@ -113,15 +138,23 @@ input[type="range"]::-webkit-slider-thumb {
   }
 
   .hero-carousel {
-    @apply relative sm:px-10 py-5 sm:pt-20 pb-5 max-w-[560px] h-[700px] w-full bg-[#F2F4F7] rounded-[30px] sm:mx-auto;
+    @apply relative sm:px-10 py-5 sm:pt-20 pb-5 max-w-[560px] h-[500px] w-full bg-[#F2F4F7] rounded-[30px] sm:mx-auto;
+  }
+
+  btn-primary {
+    @apply bg-primary hover:bg-primary/90 text-white font-medium rounded-lg text-lg px-6 py-3 transition-all duration-200 transform hover:scale-105;
   }
 
   .carousel {
-    @apply flex flex-col-reverse h-[700px];
+    @apply flex flex-col-reverse h-[500px];
   }
 
   .carousel .control-dots {
-    @apply static !important;
+    @apply static  !important;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
   }
 
   .carousel .control-dots .dot {

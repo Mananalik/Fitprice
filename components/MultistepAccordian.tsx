@@ -25,8 +25,8 @@ function MultiStepAccordion() {
       flavors: ["Chocolate", "Vanilla", "Strawberry"],
     },
     Creatine: {
-      weights: ["100g", "250g", "300g", "400g", "500g", "600g", "800g"],
-      flavors: ["Chocolate", "Fruit Punch", "Watermelon"],
+      weights: ["100g", "250g", "500g", "1kg", "2kg", "5kg"],
+      flavors: ["Chocolate", "Fruit Punch", "Watermelon", "Unflavoured"],
     },
     "Peanut Butter": {
       weights: ["250g", "350", "500g", "700", "1kg", "2kg"],
@@ -37,10 +37,6 @@ function MultiStepAccordion() {
         "Chocolate",
         "Natural/Unsweetened",
       ],
-    },
-    "Mass Gainer": {
-      weights: ["1kg", "2kg", "3kg", "5kg"],
-      flavors: ["Chocolate", "Vanilla", "Mango Burst", "Kesar Kaju Pista"],
     },
   };
 
@@ -95,35 +91,36 @@ function MultiStepAccordion() {
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto mt-12 space-y-4 flex flex-col items-center">
-      {steps.map((step) => (
-        <Accordion key={step.id} type="single" collapsible>
-          <AccordionItem value={`step-${step.id}`}>
-            <div className="space-y-2">
-              {getOptionsForStep(step.id)?.map((option: string) => (
-                <Button
-                  key={option}
-                  onClick={() => handleSelection(step.id, option)}
-                  variant={step.selected === option ? "default" : "outline"}
-                  value={option}
-                  title={option}>
-                  {option}
-                </Button>
-              ))}
-            </div>
-          </AccordionItem>
-        </Accordion>
-      ))}
-
+    <>
+      <div className="w-full max-w-xl mx-auto mt-12 space-y-4 flex flex-col items-start">
+        {steps.map((step) => (
+          <Accordion key={step.id} type="single" collapsible>
+            <AccordionItem value={`step-${step.id}`}>
+              <div className="flex gap-2">
+                {getOptionsForStep(step.id)?.map((option: string) => (
+                  <Button
+                    key={option}
+                    onClick={() => handleSelection(step.id, option)}
+                    variant={step.selected === option ? "default" : "outline"}
+                    value={option}
+                    title={option}>
+                    {option}
+                  </Button>
+                ))}
+              </div>
+            </AccordionItem>
+          </Accordion>
+        ))}
+      </div>
       {isSelectionComplete && (
         <button
           onClick={handleSearch}
           disabled={isLoading} // Disable button while loading
-          className="bg-black text-white px-3 py-2 rounded-lg w-[25%] hover:bg-white hover:text-black hover:border-2 hover:border-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+          className="bg-black text-white px-3 py-2 my-10 mx-[200px] rounded-lg w-[25%] hover:bg-white hover:text-black hover:border-2 hover:border-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col ">
           {isLoading ? "Searching..." : "Search"}
         </button>
       )}
-    </div>
+    </>
   );
 }
 

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 function Navbar() {
   const router = useRouter();
   return (
-    <header className="w-full">
+    <header className="w-[100%] ">
       <nav className="nav">
         <Link href="/" className="flex items-center gap-1">
           <Image
@@ -17,7 +17,7 @@ function Navbar() {
             alt="logo"
           />
           <p className="nav-logo">
-            Fit<span className="text-primary">Price</span>
+            <span className="icon">FitPrice</span>
           </p>
         </Link>
 

@@ -9,9 +9,9 @@ interface Product {
   brand?: string;
   rating?: number;
   site: string;
-  originalPrice?: string;    // Optional field
-  reviewCount?: number;      // Optional field
-  promotion?: string;        // Optional field
+  originalPrice?: string; // Optional field
+  reviewCount?: number; // Optional field
+  promotion?: string; // Optional field
 }
 
 export async function GET(request: Request) {
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
 
 async function scrapeProducts(query: string): Promise<Product[]> {
   const browser = await puppeteer.launch({
-    headless: false, // Run in headless mode (no browser window will open)
+    headless: true, // Run in headless mode (no browser window will open)
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -93,7 +93,10 @@ async function scrapeAmazon(page: Page, query: string): Promise<Product[]> {
 
     return await page.evaluate(() => {
       const products: Product[] = [];
-      document.querySelectorAll(".s-result-item").forEach((element) => {
+      const elements = Array.from(
+        document.querySelectorAll(".s-result-item")
+      ).slice(0, 20); // Limit to first 10
+      elements.forEach((element) => {
         const name = element.querySelector("h2")?.textContent?.trim() || "";
         const price =
           element.querySelector(".a-price-whole")?.textContent?.trim() || "";
@@ -138,51 +141,46 @@ async function scrapeMuscleBlaze(
       }
     );
 
-    // Wait for product items to load
-    await page.waitForSelector(".search-variant-parent-container", {
-      timeout: 60000,
-    });
-
     return await page.evaluate(() => {
       const products: Product[] = [];
-      document
-        .querySelectorAll(".search-variant-parent-container")
-        .forEach((element) => {
-          const name =
-            element.querySelector(".variant-name")?.textContent?.trim() || "";
-          const flavorAndWeight =
-            element
-              .querySelector(".variant-description-details")
-              ?.textContent?.trim() || "";
-          const fullName = `${name} ${flavorAndWeight}`; // Concatenate name with flavor and weight
-          const price =
-            element
-              .querySelector(".starting-price-from")
-              ?.textContent?.trim()
-              .replace("₹", "") || ""; // Remove currency symbol
-          let image =
-            element.querySelector(".variant-img img")?.getAttribute("src") ||
-            "";
-          const url = element.querySelector("a")?.getAttribute("href") || "";
-          const brand = "MuscleBlaze";
-          const ratingText =
-            element
-              .querySelector(".variant-rating-section p")
-              ?.textContent?.trim() || "";
-          const rating = parseFloat(ratingText);
+      const elements = Array.from(
+        document.querySelectorAll(".search-variant-parent-container")
+      ).slice(0, 10); // Limit to first 10
+      elements.forEach((element) => {
+        const name =
+          element.querySelector(".variant-name")?.textContent?.trim() || "";
+        const flavorAndWeight =
+          element
+            .querySelector(".variant-description-details")
+            ?.textContent?.trim() || "";
+        const fullName = `${name} ${flavorAndWeight}`;
+        const price =
+          element
+            .querySelector(".starting-price-from")
+            ?.textContent?.trim()
+            .replace("₹", "") || "";
+        let image =
+          element.querySelector(".variant-img img")?.getAttribute("src") || "";
+        const url = element.querySelector("a")?.getAttribute("href") || "";
+        const brand = "MuscleBlaze";
+        const ratingText =
+          element
+            .querySelector(".variant-rating-section p")
+            ?.textContent?.trim() || "";
+        const rating = parseFloat(ratingText);
 
-          if (fullName && price && image && url) {
-            products.push({
-              name: fullName,
-              price,
-              image,
-              url: `https://www.muscleblaze.com${url}`,
-              brand,
-              rating,
-              site: "MuscleBlaze",
-            });
-          }
-        });
+        if (fullName && price && image && url) {
+          products.push({
+            name: fullName,
+            price,
+            image,
+            url: `https://www.muscleblaze.com${url}`,
+            brand,
+            rating,
+            site: "MuscleBlaze",
+          });
+        }
+      });
       return products;
     });
   } catch (error) {
@@ -203,14 +201,12 @@ async function scrapeOptimum(page: Page, query: string): Promise<Product[]> {
       }
     );
 
-    // Wait for product items to load
-    await page.waitForSelector(".product-item", {
-      timeout: 60000,
-    });
-
     return await page.evaluate(() => {
       const products: Product[] = [];
-      document.querySelectorAll(".product-item").forEach((element) => {
+      const elements = Array.from(
+        document.querySelectorAll(".product-item")
+      ).slice(0, 10); // Limit to first 10
+      elements.forEach((element) => {
         const name =
           element.querySelector(".product-name a")?.textContent?.trim() || "";
         const price =
@@ -219,22 +215,16 @@ async function scrapeOptimum(page: Page, query: string): Promise<Product[]> {
             ?.textContent?.trim()
             .replace("₹", "")
             .trim() || "";
-
-        // Get the image container
         const imageContainer = element.querySelector(
           ".image-swap-effect, .image-swap-effect"
         );
-
         const mainImage =
           imageContainer
             ?.querySelector("img:not(.swap-image)")
             ?.getAttribute("src") || "";
-
         const url =
           element.querySelector(".product-name a")?.getAttribute("href") || "";
         const brand = "Optimum Nutrition";
-
-        // Count the number of filled stars for rating
         const ratingStars = element.querySelectorAll(
           ".rating .fa-stack .fa-star"
         ).length;
@@ -269,56 +259,47 @@ async function scrapeNutrabay(page: Page, query: string): Promise<Product[]> {
       }
     );
 
-    await page.waitForSelector(".productListing_productCrad__I_iVP", {
-      timeout: 60000,
-    });
-
     return await page.evaluate(() => {
       const products: Product[] = [];
-      document
-        .querySelectorAll(".productListing_productCrad__I_iVP")
-        .forEach((element) => {
-          const nameElement = element.querySelector(
-            ".twoLineTruncate.plpProduct_product_card__FfvkU"
-          );
-          const infoElement = element.querySelector(
-            ".product_productInfo__GE_f7"
-          );
-          const name = `${nameElement?.textContent?.trim() || ""} ${
-            infoElement?.textContent?.trim() || ""
-          }`.trim();
+      const elements = Array.from(
+        document.querySelectorAll(".productListing_productCrad__I_iVP")
+      ).slice(0, 10); // Limit to first 10
+      elements.forEach((element) => {
+        const nameElement = element.querySelector(
+          ".twoLineTruncate.plpProduct_product_card__FfvkU"
+        );
+        const infoElement = element.querySelector(
+          ".product_productInfo__GE_f7"
+        );
+        const name = `${nameElement?.textContent?.trim() || ""} ${
+          infoElement?.textContent?.trim() || ""
+        }`.trim();
+        const priceElement = element.querySelector(
+          ".plpProduct_ourPrice___6VZr"
+        );
+        const price =
+          priceElement?.textContent?.trim().replace("₹", "").trim() || "";
+        const image = element.querySelector("img")?.getAttribute("src") || "";
+        const urlElement = element.querySelector(
+          ".plpProduct_productcard__YsXnl"
+        );
+        const url = urlElement?.getAttribute("href") || "";
+        const brand = "Nutrabay";
+        const ratingElement = element.querySelector(".Rating_rating__g3c_g");
+        const rating = Number(ratingElement?.getAttribute("data-rating")) || 0;
 
-          const priceElement = element.querySelector(
-            ".plpProduct_ourPrice___6VZr"
-          );
-          const price =
-            priceElement?.textContent?.trim().replace("₹", "").trim() || "";
-
-          const image = element.querySelector("img")?.getAttribute("src") || "";
-
-          const urlElement = element.querySelector(
-            ".plpProduct_productcard__YsXnl"
-          );
-          const url = urlElement?.getAttribute("href") || "";
-
-          const brand = "Nutrabay";
-
-          const ratingElement = element.querySelector(".Rating_rating__g3c_g");
-          const rating =
-            Number(ratingElement?.getAttribute("data-rating")) || 0;
-
-          if (name && price && url) {
-            products.push({
-              name,
-              price,
-              image,
-              url: `https://nutrabay.com${url}`,
-              brand,
-              rating,
-              site: "Nutrabay", // Changed from "Optimum Nutrition"
-            });
-          }
-        });
+        if (name && price && url) {
+          products.push({
+            name,
+            price,
+            image,
+            url: `https://nutrabay.com${url}`,
+            brand,
+            rating,
+            site: "Nutrabay",
+          });
+        }
+      });
       return products;
     });
   } catch (error) {
@@ -326,7 +307,6 @@ async function scrapeNutrabay(page: Page, query: string): Promise<Product[]> {
     return [];
   }
 }
-
 
 async function scrapeMyProtein(page: Page, query: string): Promise<Product[]> {
   try {
@@ -338,36 +318,35 @@ async function scrapeMyProtein(page: Page, query: string): Promise<Product[]> {
       }
     );
 
-    await page.waitForSelector("product-card-wrapper", {
-      timeout: 30000,
-    });
-
     return await page.evaluate(() => {
       const products: Product[] = [];
-      
-      document.querySelectorAll("product-card-wrapper").forEach((element) => {
+      const elements = Array.from(
+        document.querySelectorAll("product-card-wrapper")
+      ).slice(0, 10); // Limit to first 10
+      elements.forEach((element) => {
         try {
-          // Name - from title element
-          const name = element.querySelector(".product-item-title")?.textContent?.trim() || "";
-          
-          // Price - clean and extract current price
-          const priceText = element.querySelector(".price")?.textContent?.trim() || "";
-          const price = priceText.replace(/[^\d.]/g, '');
-          
-          // Image - prefer src, fallback to srcset
+          const name =
+            element.querySelector(".product-item-title")?.textContent?.trim() ||
+            "";
+          const priceText =
+            element.querySelector(".price")?.textContent?.trim() || "";
+          const price = priceText.replace(/[^\d.]/g, "");
           const imgElement = element.querySelector(".first-image");
-          const image = imgElement?.getAttribute("src") || 
-                       imgElement?.getAttribute("srcset")?.split(' ')[0] || "";
-          
-          // URL - from title link
-          const url = element.querySelector(".product-item-title")?.getAttribute("href") || "";
-          
-          // Rating - approximate calculation from stars
-          const ratingStars = element.querySelectorAll('svg[height="20"][width="20"]');
+          const image =
+            imgElement?.getAttribute("src") ||
+            imgElement?.getAttribute("srcset")?.split(" ")[0] ||
+            "";
+          const url =
+            element
+              .querySelector(".product-item-title")
+              ?.getAttribute("href") || "";
+          const ratingStars = element.querySelectorAll(
+            'svg[height="20"][width="20"]'
+          );
           let rating = 0;
-          ratingStars.forEach(star => {
-            const gradientId = star.querySelector('linearGradient')?.id;
-            if (gradientId && gradientId.includes('list-product')) {
+          ratingStars.forEach((star) => {
+            const gradientId = star.querySelector("linearGradient")?.id;
+            if (gradientId && gradientId.includes("list-product")) {
               const stop = star.querySelector('stop[offset="100%"]');
               if (stop) rating += 1;
               else if (star.querySelector('stop[offset="45%"]')) rating += 0.45;
@@ -379,83 +358,83 @@ async function scrapeMyProtein(page: Page, query: string): Promise<Product[]> {
               name,
               price,
               image,
-              url: url.startsWith('http') ? url : `https://www.myprotein.co.in${url}`,
+              url: url.startsWith("http")
+                ? url
+                : `https://www.myprotein.co.in${url}`,
               brand: "MyProtein",
-              rating: Math.round(rating * 10) / 10, // Round to 1 decimal place
-              site: "MyProtein"
+              rating: Math.round(rating * 10) / 10,
+              site: "MyProtein",
             });
           }
         } catch (e) {
-          console.error('Error processing product:', e);
+          console.error("Error processing product:", e);
         }
       });
-      
       return products;
     });
   } catch (error) {
     console.error("Error scraping MyProtein:", error);
-    await page.screenshot({ path: 'myprotein-error.png' });
+    await page.screenshot({ path: "myprotein-error.png" });
     return [];
   }
 }
+
 async function scrapeNakpro(page: Page, query: string): Promise<Product[]> {
   try {
     await page.goto(
-      `https://nakpro.com/search?q=${encodeURIComponent(query)}&options[prefix]=last`,
+      `https://nakpro.com/search?q=${encodeURIComponent(
+        query
+      )}&options[prefix]=last`,
       {
         waitUntil: "networkidle2",
         timeout: 30000,
       }
     );
 
-    await page.waitForSelector(".grid-product", {
-      timeout: 30000,
-    });
-
     return await page.evaluate(() => {
       const products: Product[] = [];
-
-      document.querySelectorAll(".grid-product").forEach((element) => {
+      const elements = Array.from(
+        document.querySelectorAll(".grid-product")
+      ).slice(0, 10); // Limit to first 10
+      elements.forEach((element) => {
         try {
-          // Name - updated selector
-          const name = element.querySelector(".grid-product__title--body")?.textContent?.trim() || "";
-
-          // Price - updated selector
-          const priceText = element.querySelector(".ppd-price.blue")?.textContent?.trim() || "";
-          const price = priceText.replace(/[^\d.]/g, '');
-
-          // Image - fetch from img tag
+          const name =
+            element
+              .querySelector(".grid-product__title--body")
+              ?.textContent?.trim() || "";
+          const priceText =
+            element.querySelector(".ppd-price.blue")?.textContent?.trim() || "";
+          const price = priceText.replace(/[^\d.]/g, "").slice(1);
           const imgElement = element.querySelector("img.grid-product__image");
           const image = imgElement?.getAttribute("src") || "";
-
-          // URL - updated selector
-          const url = element.querySelector("a.grid-product__link")?.getAttribute("href") || "";
+          const url =
+            element
+              .querySelector("a.grid-product__link")
+              ?.getAttribute("href") || "";
 
           if (name && price && url) {
             products.push({
               name,
               price,
               image: image.startsWith("//") ? `https:${image}` : image,
-              url: url.startsWith('http') ? url : `https://nakpro.com${url}`,
+              url: url.startsWith("http") ? url : `https://nakpro.com${url}`,
               brand: "Nakpro",
-              rating: 0, // Rating extraction is optional
-              site: "Nakpro"
+              rating: 0,
+              site: "Nakpro",
             });
           }
         } catch (e) {
-          console.error('Error processing product:', e);
+          console.error("Error processing product:", e);
         }
       });
-
       return products;
     });
   } catch (error) {
     console.error("Error scraping Nakpro:", error);
-    await page.screenshot({ path: 'nakpro-error.png' });
+    await page.screenshot({ path: "nakpro-error.png" });
     return [];
   }
 }
-
 
 // Utility function to add random delays
 function sleep(ms: number) {

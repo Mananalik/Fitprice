@@ -45,7 +45,7 @@ export async function GET(request: Request) {
 
 async function scrapeProducts(query: string): Promise<Product[]> {
   const browser = await puppeteer.launch({
-    headless: true, // Run in headless mode (no browser window will open)
+    headless: false, // Run in headless mode (no browser window will open)
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -72,6 +72,7 @@ async function scrapeProducts(query: string): Promise<Product[]> {
   const optimumnutritionResults = await scrapeOptimum(page, query);
   const nutrabayResults = await scrapeNutrabay(page, query);
   const myProteinResults = await scrapeMyProtein(page, query);
+  const nakproResults = await scrapeNakpro(page, query);
   await browser.close();
   return [
     ...amazonResults,
@@ -79,6 +80,7 @@ async function scrapeProducts(query: string): Promise<Product[]> {
     ...optimumnutritionResults,
     ...nutrabayResults,
     ...myProteinResults,
+    ...nakproResults,
   ];
 }
 
@@ -396,6 +398,65 @@ async function scrapeMyProtein(page: Page, query: string): Promise<Product[]> {
     return [];
   }
 }
+async function scrapeNakpro(page: Page, query: string): Promise<Product[]> {
+  try {
+    await page.goto(
+      `https://nakpro.com/search?q=${encodeURIComponent(query)}&options[prefix]=last`,
+      {
+        waitUntil: "networkidle2",
+        timeout: 30000,
+      }
+    );
+
+    await page.waitForSelector(".grid-product", {
+      timeout: 30000,
+    });
+
+    return await page.evaluate(() => {
+      const products: Product[] = [];
+
+      document.querySelectorAll(".grid-product").forEach((element) => {
+        try {
+          // Name - updated selector
+          const name = element.querySelector(".grid-product__title--body")?.textContent?.trim() || "";
+
+          // Price - updated selector
+          const priceText = element.querySelector(".ppd-price.blue")?.textContent?.trim() || "";
+          const price = priceText.replace(/[^\d.]/g, '');
+
+          // Image - fetch from img tag
+          const imgElement = element.querySelector("img.grid-product__image");
+          const image = imgElement?.getAttribute("src") || "";
+
+          // URL - updated selector
+          const url = element.querySelector("a.grid-product__link")?.getAttribute("href") || "";
+
+          if (name && price && url) {
+            products.push({
+              name,
+              price,
+              image: image.startsWith("//") ? `https:${image}` : image,
+              url: url.startsWith('http') ? url : `https://nakpro.com${url}`,
+              brand: "Nakpro",
+              rating: 0, // Rating extraction is optional
+              site: "Nakpro"
+            });
+          }
+        } catch (e) {
+          console.error('Error processing product:', e);
+        }
+      });
+
+      return products;
+    });
+  } catch (error) {
+    console.error("Error scraping Nakpro:", error);
+    await page.screenshot({ path: 'nakpro-error.png' });
+    return [];
+  }
+}
+
+
 // Utility function to add random delays
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));

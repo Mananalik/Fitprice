@@ -194,6 +194,7 @@ function Page() {
                 <option value="Optimum Nutrition">Optimum Nutrition</option>
                 <option value="Nutrabay">Nutrabay</option>
                 <option value = "MyProtein">MyProtein</option>
+                <option value="Nakpro">Nakpro</option>
               </select>
             </div>
 

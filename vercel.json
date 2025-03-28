@@ -1,0 +1,9 @@
+{
+  "functions": {
+    "app/api/search/route.js": {
+      "memory": 3008,
+      "maxDuration": 30,
+      "includeFiles": ["node_modules/@sparticuz/chromium/**"]
+    }
+  }
+}

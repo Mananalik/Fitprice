@@ -10,9 +10,6 @@ interface Product {
   brand?: string;
   rating?: number;
   site: string;
-  originalPrice?: string; // Optional field
-  reviewCount?: number; // Optional field
-  promotion?: string; // Optional field
 }
 
 export async function GET(request: Request) {

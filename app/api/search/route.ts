@@ -43,62 +43,48 @@ export async function GET(request: Request) {
     );
   }
 }
+chromium.setHeadlessMode = true;
+chromium.setGraphicsMode = false;
 
 async function scrapeProducts(query: string): Promise<Product[]> {
-  // Determine if we're running in production (Vercel)
-  const isProduction = process.env.NODE_ENV === "production";
-
-  // Configure launch options
-  const launchOptions = {
-    args: [
-      ...(isProduction ? chromium.args : []), // Only use Chromium args in production
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-accelerated-2d-canvas",
-      "--disable-gpu",
-      "--window-size=1920,1080",
-    ],
-    executablePath: isProduction
-      ? await chromium.executablePath()
-      : process.platform === "win32"
-      ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" // Windows path
-      : process.platform === "darwin"
-      ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" // Mac path
-      : "/usr/bin/google-chrome", // Linux path
-    headless: true,
-  };
-
-  const browser = await puppeteer.launch(launchOptions);
-  const page = await browser.newPage();
-
-  // Rest of your scraping code remains the same...
-  await page.setUserAgent(
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-  );
-
-  await page.setExtraHTTPHeaders({
-    "Accept-Language": "en-US,en;q=0.9",
-  });
+  let browser;
 
   try {
-    const amazonResults = await scrapeAmazon(page, query);
-    const muscleBlazeResults = await scrapeMuscleBlaze(page, query);
-    const optimumnutritionResults = await scrapeOptimum(page, query);
-    const nutrabayResults = await scrapeNutrabay(page, query);
-    const myProteinResults = await scrapeMyProtein(page, query);
-    const nakproResults = await scrapeNakpro(page, query);
+    const executablePath = process.env.AWS_LAMBDA_FUNCTION_VERSION
+      ? await chromium.executablePath()
+      : process.platform === "win32"
+      ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+      : "/usr/bin/google-chrome";
 
-    return [
-      ...amazonResults,
-      ...muscleBlazeResults,
-      ...optimumnutritionResults,
-      ...nutrabayResults,
-      ...myProteinResults,
-      ...nakproResults,
-    ];
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath,
+      headless: chromium.headless,
+      defaultViewport: chromium.defaultViewport,
+    });
+
+    const page = await browser.newPage();
+    await page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    );
+
+    await page.setExtraHTTPHeaders({
+      "Accept-Language": "en-US,en;q=0.9",
+    });
+
+    // Your scraping logic here
+    const results = await Promise.all([
+      await scrapeAmazon(page, query),
+      await scrapeMuscleBlaze(page, query),
+      await scrapeOptimum(page, query),
+      await scrapeNutrabay(page, query),
+      await scrapeMyProtein(page, query),
+      await scrapeNakpro(page, query),
+    ]);
+
+    return results.flat();
   } finally {
-    await browser.close();
+    if (browser) await browser.close();
   }
 }
 async function scrapeAmazon(page: Page, query: string): Promise<Product[]> {

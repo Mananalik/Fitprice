@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import puppeteer, { Page } from "puppeteer";
+import chromium from "@sparticuz/chromium";
+import puppeteer, { Page } from "puppeteer-core";
 
 interface Product {
   name: string;
@@ -9,9 +10,6 @@ interface Product {
   brand?: string;
   rating?: number;
   site: string;
-  originalPrice?: string; // Optional field
-  reviewCount?: number; // Optional field
-  promotion?: string; // Optional field
 }
 
 export async function GET(request: Request) {
@@ -42,48 +40,50 @@ export async function GET(request: Request) {
     );
   }
 }
+chromium.setHeadlessMode = true;
+chromium.setGraphicsMode = false;
 
 async function scrapeProducts(query: string): Promise<Product[]> {
-  const browser = await puppeteer.launch({
-    headless: true, // Run in headless mode (no browser window will open)
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-accelerated-2d-canvas",
-      "--disable-gpu",
-      "--window-size=1920,1080",
-    ],
-  });
-  const page = await browser.newPage();
+  let browser;
 
-  // Set a realistic user agent
-  await page.setUserAgent(
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-  );
+  try {
+    const executablePath = process.env.AWS_LAMBDA_FUNCTION_VERSION
+      ? await chromium.executablePath()
+      : process.platform === "win32"
+      ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+      : "/usr/bin/google-chrome";
 
-  // Set additional HTTP headers
-  await page.setExtraHTTPHeaders({
-    "Accept-Language": "en-US,en;q=0.9",
-  });
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath,
+      headless: chromium.headless,
+      defaultViewport: chromium.defaultViewport,
+    });
 
-  const amazonResults = await scrapeAmazon(page, query);
-  const muscleBlazeResults = await scrapeMuscleBlaze(page, query);
-  const optimumnutritionResults = await scrapeOptimum(page, query);
-  const nutrabayResults = await scrapeNutrabay(page, query);
-  const myProteinResults = await scrapeMyProtein(page, query);
-  const nakproResults = await scrapeNakpro(page, query);
-  await browser.close();
-  return [
-    ...amazonResults,
-    ...muscleBlazeResults,
-    ...optimumnutritionResults,
-    ...nutrabayResults,
-    ...myProteinResults,
-    ...nakproResults,
-  ];
+    const page = await browser.newPage();
+    await page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    );
+
+    await page.setExtraHTTPHeaders({
+      "Accept-Language": "en-US,en;q=0.9",
+    });
+
+    // Your scraping logic here
+    const results = await Promise.all([
+      await scrapeAmazon(page, query),
+      await scrapeMuscleBlaze(page, query),
+      await scrapeOptimum(page, query),
+      await scrapeNutrabay(page, query),
+      await scrapeMyProtein(page, query),
+      await scrapeNakpro(page, query),
+    ]);
+
+    return results.flat();
+  } finally {
+    if (browser) await browser.close();
+  }
 }
-
 async function scrapeAmazon(page: Page, query: string): Promise<Product[]> {
   try {
     await page.goto(`https://www.amazon.in/s?k=${encodeURIComponent(query)}`, {
